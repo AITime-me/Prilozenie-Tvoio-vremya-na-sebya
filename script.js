@@ -9,7 +9,8 @@
   /* --- Константы --- */
   var STORAGE_KEY = 'tvse-diary';
   var THEME_KEY = 'tvse-theme';
-  var VALID_THEMES = ['light', 'dark', 'green', 'pink', 'gold'];
+  var VALID_THEMES = ['green', 'pink', 'gold'];
+  var CONFETTI_EMOJIS = ['💗', '🤍', '🕰️', '✨'];
 
   var SLOGANS = {
     0: 'Пусть воскресенье будет днём без спешки, с заботой о себе и своим ритмом.',
@@ -72,7 +73,7 @@
     }
   }
 
-  /** Загружает сохранённую тему */
+  /** Загружает сохранённую тему (light/dark и прочие устаревшие → green) */
   function loadTheme() {
     try {
       var theme = localStorage.getItem(THEME_KEY);
@@ -82,7 +83,7 @@
     } catch (e) {
       /* игнорируем */
     }
-    return 'light';
+    return 'green';
   }
 
   /** Сохраняет тему */
@@ -132,24 +133,37 @@
   /* --- Тема --- */
 
   function applyTheme(theme) {
-    if (VALID_THEMES.indexOf(theme) === -1) theme = 'light';
+    if (VALID_THEMES.indexOf(theme) === -1) theme = 'green';
     document.body.setAttribute('data-theme', theme);
 
     themeButtons.forEach(function (btn) {
       var isActive = btn.getAttribute('data-theme') === theme;
       btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+
+    return theme;
   }
 
   function initTheme() {
-    var theme = loadTheme();
-    applyTheme(theme);
+    var storedTheme = null;
+    try {
+      storedTheme = localStorage.getItem(THEME_KEY);
+    } catch (e) {
+      /* игнорируем */
+    }
+
+    var theme = applyTheme(loadTheme());
+
+    /* Миграция устаревших тем (light, dark и др.) */
+    if (storedTheme && VALID_THEMES.indexOf(storedTheme) === -1) {
+      saveTheme(theme);
+    }
 
     themeButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var newTheme = btn.getAttribute('data-theme');
-        applyTheme(newTheme);
-        saveTheme(newTheme);
+        var validTheme = applyTheme(newTheme);
+        saveTheme(validTheme);
       });
     });
   }
@@ -204,6 +218,48 @@
     };
   }
 
+  /** Лёгкий салютик после успешного сохранения */
+  function launchSaveConfetti() {
+    var btn = document.getElementById('btn-save');
+    if (!btn) return;
+
+    var container = document.createElement('div');
+    container.className = 'save-confetti';
+    container.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(container);
+
+    var rect = btn.getBoundingClientRect();
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+    var count = 12;
+
+    for (var i = 0; i < count; i++) {
+      var particle = document.createElement('span');
+      particle.className = 'save-confetti__particle';
+      particle.textContent = CONFETTI_EMOJIS[i % CONFETTI_EMOJIS.length];
+
+      var angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      var spread = 35 + Math.random() * 55;
+      var tx = Math.cos(angle) * spread;
+      var ty = -Math.abs(Math.sin(angle) * spread) - 25 - Math.random() * 35;
+
+      particle.style.left = originX + 'px';
+      particle.style.top = originY + 'px';
+      particle.style.setProperty('--tx', tx + 'px');
+      particle.style.setProperty('--ty', ty + 'px');
+      particle.style.animationDelay = (Math.random() * 0.15) + 's';
+      particle.style.fontSize = (15 + Math.random() * 8) + 'px';
+
+      container.appendChild(particle);
+    }
+
+    setTimeout(function () {
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }, 1800);
+  }
+
   function handleSave(e) {
     e.preventDefault();
 
@@ -217,6 +273,7 @@
     }
 
     saveMessageEl.classList.remove('hidden');
+    launchSaveConfetti();
     refreshArchive();
   }
 

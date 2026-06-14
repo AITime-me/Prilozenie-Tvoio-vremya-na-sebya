@@ -14,49 +14,10 @@
   --transition: 0.25s ease;
   --touch-min: 44px;
   --max-width: 480px;
+  --logo-filter: invert(1) brightness(0.35) sepia(0.3) hue-rotate(85deg);
 }
 
-/* --- Тема: светлая (по умолчанию) --- */
-[data-theme="light"] {
-  --bg: #faf8f6;
-  --bg-card: #ffffff;
-  --bg-input: #ffffff;
-  --text: #3d3530;
-  --text-muted: #8a7f78;
-  --text-heading: #2c2420;
-  --accent: #c4a882;
-  --accent-hover: #b3956f;
-  --accent-soft: rgba(196, 168, 130, 0.15);
-  --border: #e8e0d8;
-  --border-focus: #c4a882;
-  --logo-band-bg: #1a1a1a;
-  --slogan-bg: rgba(196, 168, 130, 0.12);
-  --save-btn-bg: #c4a882;
-  --save-btn-text: #ffffff;
-  --theme-panel-bg: #ffffff;
-}
-
-/* --- Тема: тёмная --- */
-[data-theme="dark"] {
-  --bg: #1a1816;
-  --bg-card: #252220;
-  --bg-input: #2e2a27;
-  --text: #e8e0d8;
-  --text-muted: #a89f98;
-  --text-heading: #f5f0eb;
-  --accent: #d4b896;
-  --accent-hover: #e0c8a8;
-  --accent-soft: rgba(212, 184, 150, 0.15);
-  --border: #3d3835;
-  --border-focus: #d4b896;
-  --logo-band-bg: #0d0d0d;
-  --slogan-bg: rgba(212, 184, 150, 0.1);
-  --save-btn-bg: #d4b896;
-  --save-btn-text: #1a1816;
-  --theme-panel-bg: #252220;
-}
-
-/* --- Тема: зелёная --- */
+/* --- Тема: зелёная (по умолчанию) --- */
 [data-theme="green"] {
   --bg: #f4f7f2;
   --bg-card: #ffffff;
@@ -69,11 +30,11 @@
   --accent-soft: rgba(122, 158, 126, 0.15);
   --border: #d4e0d5;
   --border-focus: #7a9e7e;
-  --logo-band-bg: #1e2b1f;
   --slogan-bg: rgba(122, 158, 126, 0.12);
   --save-btn-bg: #7a9e7e;
   --save-btn-text: #ffffff;
   --theme-panel-bg: #ffffff;
+  --logo-filter: invert(1) brightness(0.35) sepia(0.3) hue-rotate(85deg);
 }
 
 /* --- Тема: розовая --- */
@@ -89,11 +50,11 @@
   --accent-soft: rgba(201, 138, 150, 0.15);
   --border: #f0dde0;
   --border-focus: #c98a96;
-  --logo-band-bg: #2a1a1e;
   --slogan-bg: rgba(201, 138, 150, 0.12);
   --save-btn-bg: #c98a96;
   --save-btn-text: #ffffff;
   --theme-panel-bg: #ffffff;
+  --logo-filter: invert(1) brightness(0.4) sepia(0.25) hue-rotate(310deg);
 }
 
 /* --- Тема: золотая --- */
@@ -109,11 +70,11 @@
   --accent-soft: rgba(184, 149, 106, 0.15);
   --border: #ebe3d4;
   --border-focus: #b8956a;
-  --logo-band-bg: #2a2418;
   --slogan-bg: rgba(184, 149, 106, 0.12);
   --save-btn-bg: #b8956a;
   --save-btn-text: #ffffff;
   --theme-panel-bg: #ffffff;
+  --logo-filter: invert(1) brightness(0.38) sepia(0.35) hue-rotate(5deg);
 }
 
 /* --- Сброс и базовые стили --- */
@@ -153,9 +114,8 @@ body {
 }
 
 .logo-band {
-  background-color: var(--logo-band-bg);
-  padding: 20px 16px 14px;
-  transition: background-color var(--transition);
+  background: transparent;
+  padding: 24px 16px 10px;
 }
 
 .logo {
@@ -165,6 +125,9 @@ body {
   height: auto;
   margin: 0 auto;
   object-fit: contain;
+  /* Белый логотип на чёрном фоне PNG → тёмный на прозрачном, без плашки */
+  filter: var(--logo-filter);
+  mix-blend-mode: multiply;
 }
 
 .app-subtitle {
@@ -173,8 +136,8 @@ body {
   font-weight: 400;
   letter-spacing: 0.35em;
   text-transform: lowercase;
-  color: rgba(255, 255, 255, 0.75);
-  margin-top: 6px;
+  color: var(--text-muted);
+  margin-top: 8px;
 }
 
 /* Анимированный слоган по дню недели */
@@ -529,11 +492,40 @@ body {
   border: 1.5px solid rgba(0, 0, 0, 0.1);
 }
 
-.theme-btn__swatch--light { background: linear-gradient(135deg, #faf8f6, #c4a882); }
-.theme-btn__swatch--dark  { background: linear-gradient(135deg, #1a1816, #d4b896); }
 .theme-btn__swatch--green { background: linear-gradient(135deg, #f4f7f2, #7a9e7e); }
 .theme-btn__swatch--pink  { background: linear-gradient(135deg, #fdf6f4, #c98a96); }
 .theme-btn__swatch--gold  { background: linear-gradient(135deg, #faf7f0, #b8956a); }
+
+/* --- Салютик после сохранения --- */
+.save-confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.save-confetti__particle {
+  position: fixed;
+  line-height: 1;
+  will-change: transform, opacity;
+  animation: confettiBurst 1.5s ease-out forwards;
+}
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.85);
+  }
+}
 
 .theme-btn__label {
   font-size: 0.625rem;
