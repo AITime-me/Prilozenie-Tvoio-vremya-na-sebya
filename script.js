@@ -30,6 +30,8 @@
   /* --- DOM-элементы --- */
   var form = document.getElementById('diary-form');
   var didTodayEl = document.getElementById('did-today');
+  var btnAddAction = document.getElementById('btn-add-action');
+  var todayActionsListEl = document.getElementById('today-actions-list');
   var feelingEl = document.getElementById('feeling');
   var customFeelingWrap = document.getElementById('custom-feeling-wrap');
   var customFeelingEl = document.getElementById('custom-feeling');
@@ -45,6 +47,9 @@
   var archiveCardsEl = document.getElementById('archive-cards');
   var archiveEmptyEl = document.getElementById('archive-empty');
   var themeButtons = document.querySelectorAll('.theme-btn');
+
+  /* Список действий за сегодня (в памяти до сохранения) */
+  var todayActions = [];
 
   /* --- Работа с localStorage (с защитой от ошибок) --- */
 
@@ -175,6 +180,95 @@
     sloganEl.textContent = SLOGANS[day] || SLOGANS[0];
   }
 
+  /* --- Действия для себя (didTodayItems) --- */
+
+  /** Читает массив действий из записи с обратной совместимостью didToday */
+  function getDidTodayItems(entry) {
+    if (!entry) return [];
+
+    if (Array.isArray(entry.didTodayItems)) {
+      return entry.didTodayItems
+        .filter(function (item) {
+          return typeof item === 'string' && item.trim();
+        })
+        .map(function (item) {
+          return item.trim();
+        });
+    }
+
+    if (typeof entry.didToday === 'string' && entry.didToday.trim()) {
+      return [entry.didToday.trim()];
+    }
+
+    return [];
+  }
+
+  /** Отрисовывает список действий за сегодня */
+  function renderTodayActionsList() {
+    todayActionsListEl.innerHTML = '';
+
+    if (todayActions.length === 0) {
+      todayActionsListEl.classList.add('hidden');
+      return;
+    }
+
+    todayActionsListEl.classList.remove('hidden');
+
+    todayActions.forEach(function (text, index) {
+      var li = document.createElement('li');
+      li.className = 'today-action-item';
+
+      var textEl = document.createElement('span');
+      textEl.className = 'today-action-item__text';
+      textEl.textContent = text;
+
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'today-action-item__remove';
+      removeBtn.setAttribute('aria-label', 'Удалить действие: ' + text);
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', function () {
+        removeTodayAction(index);
+      });
+
+      li.appendChild(textEl);
+      li.appendChild(removeBtn);
+      todayActionsListEl.appendChild(li);
+    });
+  }
+
+  /** Добавляет действие в список за сегодня */
+  function addTodayAction(text) {
+    var trimmed = text.trim();
+    if (!trimmed) return false;
+    todayActions.push(trimmed);
+    renderTodayActionsList();
+    return true;
+  }
+
+  /** Удаляет действие из списка по индексу */
+  function removeTodayAction(index) {
+    todayActions.splice(index, 1);
+    renderTodayActionsList();
+  }
+
+  /** Собирает итоговый массив действий (список + текст из textarea) */
+  function collectDidTodayItems() {
+    var items = todayActions.slice();
+    var pending = didTodayEl.value.trim();
+    if (pending) {
+      items.push(pending);
+    }
+    return items;
+  }
+
+  function handleAddAction() {
+    if (addTodayAction(didTodayEl.value)) {
+      didTodayEl.value = '';
+      didTodayEl.focus();
+    }
+  }
+
   /* --- Форма дневника --- */
 
   function toggleCustomFeeling() {
@@ -194,22 +288,25 @@
     var entry = entries[today];
 
     if (entry) {
-      didTodayEl.value = entry.didToday || '';
+      todayActions = getDidTodayItems(entry);
+      didTodayEl.value = '';
       feelingEl.value = entry.feeling || '';
       customFeelingEl.value = entry.customFeeling || '';
       feelingDetailsEl.value = entry.feelingDetails || '';
       tomorrowPlanEl.value = entry.tomorrowPlan || '';
     } else {
+      todayActions = [];
       form.reset();
     }
 
+    renderTodayActionsList();
     toggleCustomFeeling();
     saveMessageEl.classList.add('hidden');
   }
 
   function getFormData() {
     return {
-      didToday: didTodayEl.value.trim(),
+      didTodayItems: collectDidTodayItems(),
       feeling: feelingEl.value,
       customFeeling: customFeelingEl.value.trim(),
       feelingDetails: feelingDetailsEl.value.trim(),
@@ -265,12 +362,18 @@
 
     var today = formatDateKey(new Date());
     var entries = loadEntries();
-    entries[today] = getFormData();
+    var formData = getFormData();
+    entries[today] = formData;
 
     if (!saveEntries(entries)) {
       alert('Не удалось сохранить. Возможно, память браузера переполнена.');
       return;
     }
+
+    /* Обновляем список после сохранения (включая текст из textarea) */
+    todayActions = formData.didTodayItems.slice();
+    didTodayEl.value = '';
+    renderTodayActionsList();
 
     saveMessageEl.classList.remove('hidden');
     launchSaveConfetti();
@@ -318,12 +421,14 @@
   /** Считает статистику за месяц */
   function calculateStats(monthEntries) {
     var daysFilled = monthEntries.length;
-    var totalRecords = daysFilled;
+    var totalActions = 0;
     var tomorrowPlans = 0;
     var feelingCounts = {};
 
     monthEntries.forEach(function (item) {
       var entry = item.data;
+      totalActions += getDidTodayItems(entry).length;
+
       if (entry.tomorrowPlan && entry.tomorrowPlan.trim()) {
         tomorrowPlans++;
       }
@@ -342,7 +447,7 @@
 
     return {
       daysFilled: daysFilled,
-      totalRecords: totalRecords,
+      totalActions: totalActions,
       tomorrowPlans: tomorrowPlans,
       topFeelings: sortedFeelings,
       feelingCounts: feelingCounts
@@ -386,7 +491,7 @@
 
     var items = [];
 
-    items.push('Всего записей: ' + stats.totalRecords);
+    items.push('Всего действий для себя: ' + stats.totalActions);
 
     if (stats.topFeelings.length > 0) {
       var feelingsText = stats.topFeelings
@@ -419,8 +524,9 @@
     dateEl.textContent = formatDisplayDate(item.date);
     card.appendChild(dateEl);
 
-    if (entry.didToday) {
-      card.appendChild(createCardBlock('Для себя сегодня', entry.didToday));
+    var actions = getDidTodayItems(entry);
+    if (actions.length > 0) {
+      card.appendChild(createActionsBlock('Для себя сегодня', actions));
     }
 
     var feeling = getEffectiveFeeling(entry);
@@ -439,6 +545,29 @@
     }
 
     return card;
+  }
+
+  function createActionsBlock(label, items) {
+    var block = document.createElement('div');
+    block.className = 'archive-card__block';
+
+    var labelEl = document.createElement('p');
+    labelEl.className = 'archive-card__label';
+    labelEl.textContent = label;
+
+    var listEl = document.createElement('ul');
+    listEl.className = 'archive-card__actions-list';
+
+    items.forEach(function (item) {
+      var li = document.createElement('li');
+      li.className = 'archive-card__actions-item';
+      li.textContent = item;
+      listEl.appendChild(li);
+    });
+
+    block.appendChild(labelEl);
+    block.appendChild(listEl);
+    return block;
   }
 
   function createCardBlock(label, text) {
@@ -529,6 +658,7 @@
     loadTodayEntry();
 
     feelingEl.addEventListener('change', toggleCustomFeeling);
+    btnAddAction.addEventListener('click', handleAddAction);
     form.addEventListener('submit', handleSave);
     monthSelectEl.addEventListener('change', function () {
       renderMonth(monthSelectEl.value);
