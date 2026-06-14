@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ежедневный дневник заботы о себе">
+  <title>Твоё время для себя</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Шапка с логотипом и слоганом -->
+    <header class="header">
+      <div class="logo-band">
+        <img
+          src="assets/logo.png"
+          alt="твоё время"
+          class="logo"
+          width="320"
+          height="80"
+        >
+        <p class="app-subtitle">для себя</p>
+      </div>
+      <p class="slogan" id="slogan" aria-live="polite"></p>
+    </header>
+
+    <main class="main">
+      <!-- Форма дневника -->
+      <section class="section diary-section" aria-labelledby="diary-heading">
+        <h2 id="diary-heading" class="section-title">Сегодня</h2>
+        <p class="today-date" id="today-date"></p>
+
+        <form id="diary-form" class="diary-form" novalidate>
+          <!-- Пункт 1 -->
+          <div class="field-group">
+            <label for="did-today" class="field-label">
+              Что я сделала для себя сегодня?
+            </label>
+            <textarea
+              id="did-today"
+              name="didToday"
+              class="field-textarea"
+              rows="4"
+              placeholder="Например: я погуляла 20 минут, спокойно выпила чай, сделала уход, сказала «нет», легла раньше."
+            ></textarea>
+          </div>
+
+          <!-- Пункт 2 -->
+          <div class="field-group">
+            <label for="feeling" class="field-label">
+              Как я себя после этого чувствую?
+            </label>
+            <select id="feeling" name="feeling" class="field-select">
+              <option value="">Выбери чувство</option>
+              <option value="спокойно">спокойно</option>
+              <option value="легче">легче</option>
+              <option value="радостно">радостно</option>
+              <option value="увереннее">увереннее</option>
+              <option value="теплее к себе">теплее к себе</option>
+              <option value="свободнее">свободнее</option>
+              <option value="устала, но довольна">устала, но довольна</option>
+              <option value="пока не понимаю">пока не понимаю</option>
+              <option value="другое">другое</option>
+            </select>
+
+            <div id="custom-feeling-wrap" class="custom-feeling-wrap hidden">
+              <label for="custom-feeling" class="field-label field-label--secondary">
+                Напиши своё чувство
+              </label>
+              <input
+                type="text"
+                id="custom-feeling"
+                name="customFeeling"
+                class="field-input"
+                placeholder="Твоё чувство"
+              >
+            </div>
+
+            <label for="feeling-details" class="field-label field-label--secondary">
+              Хочу описать подробнее
+            </label>
+            <textarea
+              id="feeling-details"
+              name="feelingDetails"
+              class="field-textarea"
+              rows="3"
+              placeholder="Можно написать пару слов: что изменилось внутри, что стало легче, что заметила."
+            ></textarea>
+          </div>
+
+          <!-- Пункт 3 -->
+          <div class="field-group">
+            <label for="tomorrow-plan" class="field-label">
+              Что я хочу сделать для себя завтра?
+            </label>
+            <textarea
+              id="tomorrow-plan"
+              name="tomorrowPlan"
+              class="field-textarea"
+              rows="4"
+              placeholder="Например: лечь спать до 23:00, погулять 10 минут, сходить на массаж, сделать уходовую процедуру, купить себе что-то приятное, не брать лишние задачи."
+            ></textarea>
+            <p class="field-hint">
+              Выбери что-то маленькое. Забота о себе не обязана быть проектом на 12 вкладок.
+            </p>
+          </div>
+
+          <button type="submit" class="btn-save" id="btn-save">
+            Сохранить день
+          </button>
+
+          <p class="save-message hidden" id="save-message" role="status" aria-live="polite">
+            День сохранён. Ты сегодня уже была у себя в списке.
+          </p>
+        </form>
+      </section>
+
+      <!-- Архив и статистика -->
+      <section class="section archive-section" aria-labelledby="archive-heading">
+        <h2 id="archive-heading" class="section-title">Архив и статистика</h2>
+
+        <div class="archive-controls">
+          <label for="month-select" class="field-label">Месяц</label>
+          <select id="month-select" class="field-select" aria-label="Выбор месяца">
+            <option value="">Нет записей</option>
+          </select>
+        </div>
+
+        <div id="stats-block" class="stats-block hidden">
+          <p class="stats-summary" id="stats-summary"></p>
+          <ul class="stats-list" id="stats-list"></ul>
+        </div>
+
+        <div id="archive-cards" class="archive-cards"></div>
+
+        <p id="archive-empty" class="archive-empty">
+          Здесь появится твоя история заботы о себе.
+        </p>
+      </section>
+    </main>
+
+    <!-- Переключатель тем -->
+    <aside class="theme-panel" aria-label="Выбор темы оформления">
+      <p class="theme-panel__title">Тема</p>
+      <div class="theme-buttons" role="group" aria-label="Темы">
+        <button type="button" class="theme-btn" data-theme="light" aria-pressed="true" title="Светлая">
+          <span class="theme-btn__swatch theme-btn__swatch--light"></span>
+          <span class="theme-btn__label">Светлая</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="dark" aria-pressed="false" title="Тёмная">
+          <span class="theme-btn__swatch theme-btn__swatch--dark"></span>
+          <span class="theme-btn__label">Тёмная</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="green" aria-pressed="false" title="Зелёная">
+          <span class="theme-btn__swatch theme-btn__swatch--green"></span>
+          <span class="theme-btn__label">Зелёная</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="pink" aria-pressed="false" title="Розовая">
+          <span class="theme-btn__swatch theme-btn__swatch--pink"></span>
+          <span class="theme-btn__label">Розовая</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="gold" aria-pressed="false" title="Золотая">
+          <span class="theme-btn__swatch theme-btn__swatch--gold"></span>
+          <span class="theme-btn__label">Золотая</span>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
